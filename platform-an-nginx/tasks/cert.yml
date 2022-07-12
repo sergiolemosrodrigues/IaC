@@ -1,0 +1,17 @@
+- name: copy certificate files
+  copy:
+    src: "ssl/fullchain.wildcard.crt"
+    dest: "/etc/pki/tls/certs/fullchain.wildcard.crt"
+    force: true
+    owner: root
+    group: root
+    mode: 0640
+    
+- name: copy key files
+  copy:
+    src: "ssl/fullchain.wildcard.key"
+    dest: "/etc/pki/tls/private/fullchain.wildcard.key"
+    force: true
+    owner: root
+    group: root
+    mode: 0640

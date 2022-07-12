@@ -1,0 +1,58 @@
+---
+- name: Create the nginx group
+  group:
+    name: "{{ __nginx_user_group }}"
+    state: present
+    system: true
+  when: __nginx_user_group != "root"
+
+- name: Create the nginx user
+  user:
+    name: "{{ __nginx_user }}"
+    groups: "{{ __nginx_user_group }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+    create_home: false
+    home: /
+  when: __nginx_user != "root"
+
+# Configuring SE Linux and Firewalld
+- name: Set httpd_can_network_connect flag on and keep it persistent across reboots
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+  ignore_errors: yes
+
+- name: Allow nginx ports in SELinux on RedHat OS family
+  seport:
+    ports: "{{ item }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  loop: "{{ nginx_web_listen_ports }}"
+  ignore_errors: yes
+  when:
+    - ansible_version.full is version_compare('2.4', '>=')
+    - ansible_selinux.status == "enabled"
+
+- name: open ports on firewalld
+  firewalld: "port={{ item }}/tcp zone=public permanent=true state=enabled immediate=yes"
+  loop: "{{ nginx_web_listen_ports }}"
+  when: open_ports_firewall
+
+- name: Enable nginx repo.
+  template:
+    src: nginx.repo.j2
+    dest: /etc/yum.repos.d/nginx.repo
+    owner: root
+    group: "{{ root_group }}"
+    mode: 0644
+  ignore_errors: yes
+  when: nginx_yum_repo_enabled | bool
+  
+- name: Ensure nginx is installed.
+  package:
+    name: "{{ nginx_package_name }}"
+    state: present
