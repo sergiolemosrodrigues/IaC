@@ -1,0 +1,27 @@
+---
+- name: KEYCLOAK | Install MySQL additional packages
+  package:
+    name:
+    - mysql
+    - python2-PyMySQL
+    - python2-cryptography
+    state: present
+
+- name: Create a new database with name 'keycloak'
+  mysql_db:
+    login_host: "{{ mysql_host }}"
+    login_user: "{{ mysql_admin_user }}"
+    login_password: "{{ mysql_admin_password }}"
+    name: keycloak
+    state: present
+
+- name: Create database user with password and keycloak database privileges
+  mysql_user:
+    login_host: "{{ mysql_host }}"
+    login_user: "{{ mysql_admin_user }}"
+    login_password: "{{ mysql_admin_password }}"
+    name: "{{ keycloak_db_user }}"
+    password: "{{ keycloak_db_password }}"
+    priv: 'keycloak.*:ALL'
+    host: '%'
+    state: present

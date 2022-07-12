@@ -1,0 +1,94 @@
+---
+- name: KEYCLOAK | Verify if plugin file exists
+  find:
+    paths: "{{ keycloak_deployments_path }}"
+    patterns: '*.jar'
+    excludes: 
+      - "{{ keycloak_plugin_jar }}"
+  register: old_plugins
+  when: keycloak_plugin_jar is defined
+
+- name: KEYCLOAK | Delete old plugins
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ old_plugins['files'] }}"
+  when: keycloak_plugin_jar is defined
+
+- name: KEYCLOAK | Send plugin jar
+  copy:
+    src: "{{ keycloak_plugin_jar }}"
+    dest: "{{ keycloak_deployments_path }}/{{ keycloak_plugin_jar }}"
+    owner: "{{ keycloak_user }}"
+    group: "{{ keycloak_group }}"
+    mode: '0644'
+  when: keycloak_plugin_jar is defined
+
+- name: KEYCLOAK | Waiting plugin deploy
+  pause:
+    seconds: 10
+  when: keycloak_plugin_jar is defined
+
+
+- name: KEYCLOAK | Create Token
+  uri:
+    url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      username: "{{ keycloak_admin_user }}"
+      password: "{{ keycloak_admin_password }}"
+      grant_type: "password"
+      client_id: "admin-cli"
+  register: keycloak_token
+
+- name: KEYCLOAK | Check if Realm {{ keycloak_realm_name }} exists
+  uri:
+    url: "http://localhost:8080/auth/admin/realms/{{ keycloak_realm_name }}"
+    method: GET
+    status_code:
+     - 200
+     - 404
+    headers:
+      Accept: "application/json"
+      Authorization: "Bearer {{ keycloak_token.json.access_token }}"
+  register: keycloak_realm_exists
+
+- set_fact:
+    keycloak_realm_json: "{{ lookup('template', 'realm.json.j2') }}"
+
+- name: "KEYCLOAK | Create Realm {{ keycloak_realm_name }}"
+  uri:
+    url: "http://localhost:8080/auth/admin/realms/"
+    method: POST
+    body: "{{ keycloak_realm_json }}"
+    body_format: json
+    remote_src: "no"
+    status_code:
+     - 201
+    headers:
+      Content-type: "application/json"
+      Accept: "application/json"
+      Authorization: "Bearer {{ keycloak_token.json.access_token }}"
+  register: keycloak_realm_create
+  when: "keycloak_realm_exists.status == 404"
+
+- name: "KEYCLOAK | Update Realm {{ keycloak_realm_name }}"
+  uri:
+    url: "http://localhost:8080/auth/admin/realms/{{ keycloak_realm_name }}"
+    method: PUT
+    body: "{{ keycloak_realm_json }}"
+    body_format: json
+    remote_src: "no"
+    return_content: yes
+    status_code:
+     - 204
+    headers:
+      Content-type: "application/json"
+      Accept: "application/json"
+      Authorization: "Bearer {{ keycloak_token.json.access_token }}"
+  register: keycloak_realm_create
+  when: "keycloak_realm_exists.status == 200"
+
+- debug:
+    msg: "{{keycloak_realm_create}}"
