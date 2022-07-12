@@ -1,0 +1,12 @@
+---
+- name: "Upgrade Ubuntu Linux"
+  apt:
+    update_cache: yes
+    upgrade: dist
+    force_apt_get: yes
+
+- name: "Install Java 11"
+  apt:
+    name: openjdk-11-jdk-headless
+    state: present
+    force_apt_get: yes
