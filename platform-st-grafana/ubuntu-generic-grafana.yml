@@ -1,0 +1,21 @@
+#cloud-config
+runcmd:
+ - sudo echo "#ubuntu" > /etc/apt/sources.list
+ - sudo echo "deb http://archive.ubuntu.com/ubuntu focal main restricted universe multiverse" >> /etc/apt/sources.list
+ - sudo echo "deb http://archive.ubuntu.com/ubuntu focal-updates main restricted universe multiverse" >> /etc/apt/sources.list
+ - sudo echo "deb http://archive.ubuntu.com/ubuntu focal-backports main restricted universe multiverse" >> /etc/apt/sources.list
+ - sudo echo "deb http://archive.ubuntu.com/ubuntu focal-proposed restricted main universe multiverse" >> /etc/apt/sources.list
+ - sudo echo "#security" >> /etc/apt/sources.list
+ - sudo echo "deb http://security.ubuntu.com/ubuntu focal-security main restricted universe multiverse" >> /etc/apt/sources.list
+ - sudo echo "#partner" >> /etc/apt/sources.list
+ - sudo echo "deb http://archive.canonical.com/ubuntu focal partner" >> /etc/apt/sources.list
+ - sudo echo "deb https://packages.grafana.com/oss/deb stable main" > /etc/apt/sources.list.d/grafana.list
+ - wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+ - sudo echo "DEBIAN_FRONTEND=noninteractive" >> /etc/environment
+ - sudo source /etc/environment && source /etc/environment
+ - sudo apt update --fix-missing
+ - sudo apt -y install grafana
+ - sudo systemctl daemon-reload
+ - sudo systemctl start grafana-server
+ - sudo systemctl status grafana-server
+ - sudo systemctl enable grafana-server.service
