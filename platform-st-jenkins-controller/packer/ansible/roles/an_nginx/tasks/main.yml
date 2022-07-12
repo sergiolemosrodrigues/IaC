@@ -1,0 +1,21 @@
+---
+- name: Install nginx to be used as a proxy
+  apt:
+    name: nginx-light
+    state: present
+
+- name: Update nginx.conf file
+  copy:
+    src: nginx.conf
+    dest: "/etc/nginx/nginx.conf"
+
+- name: Create jenkins proxy configuration
+  copy:
+    src: jenkins.conf
+    dest: "/etc/nginx/conf.d/jenkins.conf"
+
+- name: Enable nginx service
+  systemd:
+    name: nginx
+    enabled: yes
+    masked: no

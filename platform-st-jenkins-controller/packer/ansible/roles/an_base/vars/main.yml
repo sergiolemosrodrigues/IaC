@@ -1,0 +1,4 @@
+---
+installation_files_dir: /tmp/jenkins_installation_files
+jenkins_base_dir: /opt/jenkins
+url_download_jenkins: https://get.jenkins.io/war-stable/latest/jenkins.war

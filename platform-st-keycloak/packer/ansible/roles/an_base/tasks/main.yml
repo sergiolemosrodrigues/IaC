@@ -1,0 +1,56 @@
+---
+- name: "Create the {{ installation_files_dir }} directory"
+  file:
+    state: directory
+    path: "{{ installation_files_dir }}"
+
+- name: Download keycloak
+  get_url:
+    url: https://github.com/keycloak/keycloak/releases/download/15.0.2/keycloak-15.0.2.tar.gz
+    dest: "{{ installation_files_dir }}"
+
+- name: Create Keycloak group
+  group:
+    gid: 54321
+    name: keycloak
+    state: present
+
+- name: Create Keycloak user
+  user:
+    name: keycloak
+    group: keycloak
+    uid: 54321
+
+- name: "Create directory {{ keycloak_base_dir }}"
+  file:
+    path: "{{ keycloak_base_dir }}"
+    owner: keycloak
+    group: keycloak
+    state: directory
+
+- name: "Unarchive Keycloak"
+  unarchive:
+    src: "{{ installation_files_dir }}/keycloak-15.0.2.tar.gz"
+    dest: "{{ installation_files_dir }}/"
+    remote_src: yes
+
+- name: "Copy keycloak structure to /opt/keycloak"
+  copy:
+    src: "{{ installation_files_dir }}/keycloak-15.0.2/"
+    dest: "{{ keycloak_base_dir }}/"
+    owner: keycloak
+    group: keycloak
+    remote_src: yes
+
+- name: "Fix permission to keycloak in {{ installation_files_dir }}"
+  file:
+    path: "{{ installation_files_dir }}"
+    owner: keycloak
+    group: keycloak
+    recurse: yes
+
+- name: "Clean up"
+  file:
+    state: absent
+    path: "{{ installation_files_dir }}/"
+    

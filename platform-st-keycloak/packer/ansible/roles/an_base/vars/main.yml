@@ -1,0 +1,3 @@
+---
+installation_files_dir: /tmp/installation_files
+keycloak_base_dir: /opt/keycloak

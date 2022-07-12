@@ -1,0 +1,65 @@
+---
+- name: Check java
+  shell: java -version
+  register: java_result
+
+- name: Create group jenkins gid 20000
+  group:
+    name: jenkins
+    gid: 20000
+    state: present
+
+- name: Create user jenkins uid 20000
+  user:
+    name: jenkins
+    home: /home/jenkins
+    shell: /bin/bash
+    groups: jenkins
+    uid: 20000
+
+- name: "Create directory {{ jenkins_base_dir }}"
+  file:
+    path: "{{ jenkins_base_dir }}"
+    owner: jenkins
+    group: jenkins
+    state: directory
+
+- name: Download Jenkins
+  get_url:
+    url: "{{ url_download_jenkins }}"
+    dest: "{{ jenkins_base_dir }}"
+
+- name: "Fix permission to jenkins in {{ jenkins_base_dir }}"
+  file:
+    path: "{{ jenkins_base_dir }}"
+    owner: jenkins
+    group: jenkins
+    recurse: yes
+
+- name: Create jenkins default variables
+  template:
+    src: templates/jenkins.j2
+    dest: /etc/default/jenkins
+
+- name: Create jenkins systemd service file
+  template:
+    src: templates/jenkins.service.j2
+    dest: /lib/systemd/system/jenkins.service
+
+- name: Create a symbolic link
+  file:
+    src: /lib/systemd/system/jenkins.service
+    dest: /lib/systemd/system/multi-user.target.wants/jenkins.service
+    owner: root
+    group: root
+    state: link
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Enable jenkins service
+  systemd:
+    name: jenkins
+    enabled: yes
+    masked: no
